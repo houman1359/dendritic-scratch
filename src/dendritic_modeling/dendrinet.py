@@ -342,6 +342,7 @@ class DendriticBranchLayer(nn.Module):
         self.layer_idx = layer_idx          
         self.reactivation_strategy = reactivation_strategy
         self.blocklinear_strategy = blocklinear_strategy
+        self.use_shunting = use_shunting
         
         self.input_excitatory = excitatory_input_dim is not None
         if self.input_excitatory:
@@ -419,19 +420,30 @@ class DendriticBranchLayer(nn.Module):
             self.branch_inhibition.decay_weights(weight_decay)
 
     def forward(self, x, inhibitory_input=None, branch_input=None):
-        numerator = 0
-        denominator = 1
-        if self.input_excitatory:
-            excitation = self.branch_excitation(x)
-            numerator += excitation
-            denominator += excitation
-        if self.input_inhibitory:
-            denominator += self.branch_inhibition(inhibitory_input)
-        if self.input_branches:
-            numerator += self.branches_to_output(branch_input)
-            denominator += self.branches_to_output.sum_conductances()
+        if self.use_shunting:
+            numerator = 0
+            denominator = 1
+            if self.input_excitatory:
+                excitation = self.branch_excitation(x)
+                numerator += excitation
+                denominator += excitation
+            if self.input_inhibitory:
+                denominator += self.branch_inhibition(inhibitory_input)
+            if self.input_branches:
+                numerator += self.branches_to_output(branch_input)
+                denominator += self.branches_to_output.sum_conductances()
 
-        voltage = numerator / denominator
+            voltage = numerator / denominator
+
+        else:
+            voltage = 0
+            if self.input_excitatory:
+                voltage += self.branch_excitation(x)
+            if self.input_inhibitory:
+                voltage -= self.branch_inhibition(inhibitory_input)
+            if self.input_branches:
+                voltage += self.branches_to_output(branch_input)
+
         return self.reactivation(voltage) if self.reactivate else voltage
 
     def get_weights(self):
@@ -603,14 +615,19 @@ class DendriNet(nn.Module):
         n_layers = self.n_branch_layers + 1
         for i in range(n_layers):
             layer = self.branch_layers[i]
-            if self.input_inhibitory:
+
+            if layer.input_inhibitory and layer.input_excitatory:
                 exc, inh = layer.get_pruned_weights() if pruned else layer.get_weights()
+                exc_chunk = exc.chunk(self.n_soma, dim=0)
                 inh_chunk = inh.chunk(self.n_soma, dim=0)
-                inh_total += torch.stack([chunk.sum(0) for chunk in inh_chunk], dim=0)
-            else:
+                
+                exc_total = exc_total + torch.stack([chunk.sum(0) for chunk in exc_chunk], dim=0)
+                inh_total = inh_total + torch.stack([chunk.sum(0) for chunk in inh_chunk], dim=0)
+
+            elif layer.input_excitatory:
                 exc = layer.get_pruned_weights() if pruned else layer.get_weights()
-            exc_chunk = exc.chunk(self.n_soma, dim=0)
-            exc_total += torch.stack([chunk.sum(0) for chunk in exc_chunk], dim=0)
+                exc_chunk = exc.chunk(self.n_soma, dim=0)
+                exc_total = exc_total + torch.stack([chunk.sum(0) for chunk in exc_chunk], dim=0)
 
         if self.input_inhibitory:
             return exc_total, inh_total

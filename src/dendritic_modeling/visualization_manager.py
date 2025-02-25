@@ -35,10 +35,11 @@ class PlotManager:
     The main experiment code can call PlotManager.run_plot(plot_name),
     without needing to manually code each function call in train_experiments.py.
     """
-    def __init__(self, model, data, config, save_path, file_name, device='cpu'):
+    def __init__(self, model, data, shape, config, save_path, file_name, device='cpu'):
 
         self.model = model
         self.data = data
+        self.shape = shape
         self.config = config
         self.device = device
 
@@ -76,11 +77,12 @@ class PlotManager:
         if hasattr(self.model, 'net'):
             save_dir = os.path.join(self.save_path, "param_visuals")
             os.makedirs(save_dir, exist_ok=True)
-            shaper = Shaper(shape=(28, 28))
+            if self.shape is not None:
+                shaper = Shaper(shape=self.shape)
             plot_einet_params(
                 einet=self.model.net,
                 save_root=save_dir,
-                reshape_fn=shaper.reshape,
+                reshape_fn=shaper.reshape if self.shape is not None else None,
                 reshape_exc_syn=True,
                 logspace=True,
                 save_in_dir=True,
@@ -110,12 +112,14 @@ class PlotManager:
             save_dir = os.path.join(self.save_path, "grad_visuals")
             os.makedirs(save_dir, exist_ok=True)
             train_input, train_label = self.data['train'][:]
+            if self.shape is not None:
+                shaper = Shaper(shape=self.shape)
             plot_einet_gradients(
                 model=self.model,
                 inputs=train_input,
                 labels=train_label,
                 save_root=save_dir,
-                reshape_fn=None,
+                reshape_fn=shaper.reshape if self.shape is not None else None,
                 reshape_exc_syn=True,
                 save_in_dir=True,
                 filename=self.file_name
@@ -128,14 +132,15 @@ class PlotManager:
         if hasattr(self.model, 'net'):
             save_dir = os.path.join(self.save_path, "profiles")
             os.makedirs(save_dir, exist_ok=True)
-            shaper = Shaper(shape=(28, 28))
+            if self.shape is not None:
+                shaper = Shaper(shape=self.shape)
             plot_einet_profiles(
                 model=self.model,
                 train_data=self.data['train'],
                 valid_data=self.data['valid'],
                 n_tasks=1,
                 logspace=True,
-                reshape_fn=shaper.reshape,
+                reshape_fn=shaper.reshape if self.shape is not None else None,
                 save_root=save_dir,
                 save_in_dir=True,
                 filename=self.file_name,

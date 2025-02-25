@@ -84,14 +84,13 @@ class BaseTrainer:
 
 class TrainerMLE(BaseTrainer):
     def train(self, model, train_data, valid_data=None, grad_clip_value=5, epochs=100,
-              batch_size=256, shuffle=True, load_best_state_dict=True,
+              batch_size=256, shuffle=True, load_best_state_dict=True, best_loss = float('inf'),
               plot_losses=False, save_path=None):
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
         model = model.to(device)
         train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=shuffle)
         train_losses = []
         valid_losses = []
-        best_loss = float('inf')
         best_epoch = 1
         best_state = deepcopy(model.state_dict())
         start_time = time.time()
@@ -141,6 +140,8 @@ class TrainerMLE(BaseTrainer):
             model.load_state_dict(best_state)
         results = {
             "best epoch": best_epoch,
+            "best loss": best_loss,
+            "best state dict": best_state,
             "train losses": train_losses,
             "valid losses": valid_losses,
         }
@@ -148,7 +149,7 @@ class TrainerMLE(BaseTrainer):
             if save_path and os.path.exists(save_path):
                 plot_NLL_loss_curves(train_losses, valid_losses, epochs, save_path)
             else:
-                plot_NLL_loss_curves(train_losses, valid_losses, epochs)
+                results['loss curves'] = plot_NLL_loss_curves(train_losses, valid_losses, epochs)
         return results
 
     def train_freeze_layers(self, model, train_data, valid_data=None, epochs_per_layer=5,
