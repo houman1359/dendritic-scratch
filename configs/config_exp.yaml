@@ -1,0 +1,70 @@
+model:
+  task: classification
+  probabilistic: true
+  network:
+    type: EINet #"EINet", "MLP"
+    parameters:
+      excitatory_layer_sizes: [10] 
+      inhibitory_layer_sizes: [20]
+      excitatory_branch_factors: [2,2] 
+      inhibitory_branch_factors: []
+      reactivate: true
+      somatic_synapses: true
+      ee_synapses_per_branch_per_layer: [24]
+      ei_synapses_per_branch_per_layer: [200]
+      ie_synapses_per_branch_per_layer: [2]
+      ii_synapses_per_branch_per_layer: []
+      topk_init_method: xavier_normal
+      use_shunting: false
+      reactivation_type: param_tanh # "none", "param_tanh", "param_tanh_only_m", "relu", "sigmoid", "tanh"
+      reactivation_strategy: inverse # "none", "inverse"
+      blocklinear_strategy: block_conductance_dynamic # "none", "distal_upweight_by_idx", "block_conductance_dynamic"
+      enable_branch_outputs: false   ### alows DendriNetWithOutputs to keep activations etc
+      output_layer: false  ### adding an output classifier layer FC to final dendrinet layer
+      output_dim: 10
+
+train:
+  learning_strategy: mle #"mle", "freeze_layers", "local_credit_assignment", "two_step", "two_step_kl"    --> local learning rules should start with local_...
+  run_name: mnist_einet
+  seed: 0
+  train_valid_split: 0.8
+  lr: 0.01
+  epochs: 50
+  batch_size: 1024
+  grad_clip_value: 5
+  epochs_per_layer: 50  ## this is only for "freeze_layers" and any other method which has sequential single layer training
+  pretrain_epochs: 10   ## for "two_step"
+  weight_decay_rate: 0.1
+
+task:
+  dataset: mnist 
+  data_path: 
+  parameters: {}
+  # dataset: "line", "center_surround", "orientation_bars", "multi_xor", "mnist", "mnist_modulo10", "mnist_switch2",
+            #"mnist_switch10", "info_shunting", "noise_resilience", "feature_selectivity", "context_gating",
+            #"learning_dynamics", "hierarchical_processing", "cifar10"
+  # parameters:
+  #   train_size: 8000
+  #   valid_size: 1000
+  #   test_size:  1000
+  #   image_size: 16   # relevant for orientation_bars
+  #   n_orient_classes: 8
+
+wandb:
+  entity: 
+  project: #"dendritic_mnist_test"
+  group:   #"debug"
+  tags:    #[mnist_1]
+  use_wandb: false 
+
+visualization:
+  enabled: true
+  save_path:   # specified by user
+  visualize_epochs: [10, 30]  # list of epochs at which to produce intermediate visualizations
+  plots:
+    - weights      # Plot dendritic or EI-net weights
+    - activations  # Plot per-digit activation distribution
+    - gradients    # Plot synapse or branch gradients
+    #- profiles     # Plot dendritic compartment profiles
+    #- branch_info  # mutual information
+    #- ablation     # ablation

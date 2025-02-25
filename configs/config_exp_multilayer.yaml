@@ -1,0 +1,90 @@
+model:
+  task: classification #classification or einet_nll
+  probabilistic: True
+  network:
+    type: "EINet"
+    parameters:
+      input_dim: 784
+      excitatory_layer_sizes: [256,256]
+      inhibitory_layer_sizes: [50,50]
+      excitatory_branch_factors: [2,2,5]
+      inhibitory_branch_factors: [1]
+      reactivate: true
+      somatic_synapses: true
+      ee_synapses_per_branch_per_layer: [24,24]
+      ei_synapses_per_branch_per_layer: [20,10]
+      ie_synapses_per_branch_per_layer: [1,1]
+      ii_synapses_per_branch_per_layer: [1,1]
+      topk_init_method: xavier_normal 
+      use_shunting: true
+
+      init_gain: 1.0
+      init_inhib_offset: 1.3
+      reactivation_initial_m: 2
+      reactivation_initial_b: 0.5
+
+      reactivation_type: param_tanh  # "none", "param_tanh", "relu", "sigmoid", "tanh"
+      train_reactivation_b_only: false
+
+      gradient_strategy: none #"none", "distal_upweight", "distal_upweight_by_idx", "freeze_layer" , "uniform_scale", "block_conductance_dynamic"
+      gradient_scale_factor: 1
+
+      weight_decay_rate: 0.1
+
+      local_learning: none #"none", "backprop_alignment"
+      local_loss_weight: 0 #0.5
+
+      enable_branch_outputs: true
+
+      output_layer: bool = true
+      output_dim: int = 10
+
+train:
+  run_name: "mnist_einet"
+  seed: 0
+  train_valid_split: 0.8
+  lr: 0.01
+  epochs: 50
+  batch_size: 1000
+  grad_clip_value: 5
+  epochs_per_layer: 50 
+
+task:
+  dataset: "mnist"
+  parameters: {}
+
+wandb:
+  entity: 
+  project: "dendritic_mnist_multilayer"
+  group: "debug"
+  tags: [mnist_1]
+
+visualization:
+  enabled: true
+  save_path: 
+  # A list of which plots/analyses to generate:
+  plots: 
+    #- "weights"      # Plot dendritic or EI-net weights
+    #- "activations"  # Plot per-digit activation distribution
+    #- "gradients"    # Plot synapse or branch gradients
+    - "branch_info"  # mutual information
+    - "ablation"     # ablation 
+
+# Explanation of the Methods:
+#  1. Vanilla Backprop
+#     -> gradient_strategy: "none"
+#  2. Uniform Gradient Scaling
+#     -> gradient_strategy: "uniform_scale"
+#  3. Distal Upweight
+#     -> gradient_strategy: "distal_upweight" or "distal_upweight_by_idx"
+#  4. Freeze-Layers
+#     -> gradient_strategy: "freeze_layer"
+#  5. Local Learning Rules
+#  6. Initialization Tweaks
+#     -> init_gain, init_inhib_offset, etc.
+#  7. Reactivation Scaling
+#     -> reactivation_initial_m, reactivation_initial_b, reactivation_type
+#  8. The `visualization` block
+#     -> 'enabled' toggles plotting or not
+#     -> 'save_path' is directory for figure outputs
+#     -> 'plots' is a list of keys recognized by the PlotManager

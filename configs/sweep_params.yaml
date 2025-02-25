@@ -1,0 +1,113 @@
+# sweep_params.yaml
+
+slurm_config:
+  output_dir: 
+  conda_env_path: 
+  modules_to_load: ["python/3.12.5-fasrc01", "cuda/12.4.1-fasrc01", "cudnn/8.9.2.26_cuda12-fasrc01"]
+  max_concurrent_jobs: 8
+  training_script: "/" # path of train_experiments.py
+  config_filename_init: "test_config"
+  account: "kempner_dev"
+  nodes: 1
+  ntasks_per_node: 1
+  gpus_per_node: 1
+  cpus_per_task: 10
+  mem: 200GB
+  time: "0:30:00"
+  partition: "kempner_h100"
+  run_name: "dendritic_model_sweep_job"
+
+train_config:
+  model:
+    task: "classification"
+    probabilistic: True
+    network:
+      type: "EINet"
+      parameters:
+        input_dim: 784
+        excitatory_layer_sizes: [10]
+        inhibitory_layer_sizes: [20]
+        excitatory_branch_factors: [1,2]
+        inhibitory_branch_factors: []
+        reactivate: true
+        somatic_synapses: true
+        ee_synapses_per_branch_per_layer: [24]
+        ei_synapses_per_branch_per_layer: [200]
+        ie_synapses_per_branch_per_layer: [1]
+        ii_synapses_per_branch_per_layer: []
+        topk_init_method: "xavier_normal"
+        use_shunting: true
+
+      init_gain: 1.0
+      init_inhib_offset: 1.3
+      reactivation_initial_m: 2
+      reactivation_initial_b: 0.5
+
+      reactivation_type: param_tanh  # "none", "param_tanh", "relu", "sigmoid", "tanh"
+      train_reactivation_b_only: false
+
+      gradient_strategy: block_conductance_dynamic  #"none", "distal_upweight_by_idx", "block_conductance_dynamic"
+      gradient_scale_factor: 2
+
+      weight_decay_rate: 0.1
+      enable_branch_outputs: true
+
+      output_layer: bool = false
+      output_dim: int = 10
+
+  train:
+    learning_strategy: "two_step"   # or "mle", "freeze_layers", "local_credit_assignment", "train_only_b_react", "two_step" 
+    run_name: "mnist_einet"
+    seed: 0
+    train_valid_split: 0.8
+    lr: 0.01
+    epochs: 50
+    batch_size: 1000
+    grad_clip_value: 5
+    epochs_per_layer: 50 
+
+  # If you have wandb config:
+  wandb:
+    entity: 
+    project: dendritic_mnist_sweep_learning_strategy
+    group: "debug"
+    tags: [mnist_sweep]
+    use_wandb: true
+    
+  # task config (for get_unified_datasets):
+  task:
+    dataset: "mnist"
+    parameters: {r}
+
+
+  visualization:
+    enabled: false
+    save_path: 
+    plots:
+      #- "weights"      # Plot dendritic or EI-net weights
+      #- "activations"  # Plot per-digit activation distribution
+      #- "gradients"    # Plot synapse or branch gradients
+      #- "branch_info"  # mutual information
+      #- "ablation"     # ablation
+
+
+sweep_config:
+  # Example: vary some network parameters
+  #model.network.parameters.gradient_strategy: ["none", "uniform_scale", "distal_upweight", "distal_upweight_by_idx", "freeze_layer"]
+  #model.network.parameters.gradient_scale_factor: [1.0, 2.0]
+  #model.network.parameters.init_gain: [0.5, 1.0, 2.0]
+  #model.network.parameters.init_inhib_offset: [0.0, 1.0]
+  #model.network.parameters.local_learning: ["none", "backprop_alignment"]
+  #model.network.parameters.local_loss_weight: [0.0, 0.5]
+  #model.network.parameters.excitatory_branch_factors: [[1, 1, 1, 2, 2],[1, 1, 1, 2, 5],[1, 1, 1, 2, 10],[1, 1, 1, 2, 20],[1, 1, 1, 2, 50]]
+
+  # Possibly vary training as well
+  #train.epochs: [50, 100]
+  #train.batch_size: [500, 200]
+
+  #model.network.parameters.topk_init_method: ['xavier_normal', 'xavier_uniform', 'normal', 'uniform']
+
+  train.learning_strategy: ["mle", "two_step" ,"freeze_layers", "local_credit_assignment", "train_only_b_react"]
+
+
+#python scripts/generate_sweep_configs.py configs sweep_params.yaml
