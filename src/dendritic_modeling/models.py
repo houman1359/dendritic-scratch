@@ -95,7 +95,7 @@ class Classifier(BaseModel):
 
         if self.use_output_layer:
             self.final_fc = nn.Linear(self.output_dim, self.output_dim) 
-            
+       
     def forward(self, x, y=None):
         logits = self.net(x)
         if hasattr(self, 'final_fc'):

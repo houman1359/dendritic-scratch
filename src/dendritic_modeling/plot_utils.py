@@ -1731,6 +1731,7 @@ def plot_activation_tuning(einet, input_list, save_root):
     """
     Quantifies and plots the sensitivity of activations to different digits 
     per layer in the Excitation-Inhibition Network.
+
     Args:
         einet (Net): The trained network.
         input_list (list): List of input tensors, each corresponding to a digit.
@@ -1788,6 +1789,7 @@ def plot_voltage_before_activation(einet, input_list, save_root=None):
     """
     Plots the voltage before feeding it to the activation function 
     for each layer in the Excitation-Inhibition Network.
+    
     Args:
         einet (Net): The neural network model.
         input_list (list): List of input tensors for visualization.

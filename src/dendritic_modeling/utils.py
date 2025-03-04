@@ -133,6 +133,7 @@ def compute_MI(activations, labels, n_bins=10):
     """
     Estimate the mutual information I(activations; labels).
     Here, we do a 1D approach:
+    
       - if activations is [N], or [N,1], we bin them
       - build joint histogram with labels
       - compute I(X;Y) = sum p(x,y) log [ p(x,y)/(p(x)p(y)) ]

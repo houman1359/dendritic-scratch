@@ -1,6 +1,8 @@
-from dataclasses import dataclass, field
 from typing import List, Dict
+from dataclasses import dataclass, field, asdict
+
 from omegaconf import OmegaConf as om
+
 
 class BaseConfig:
     @classmethod
@@ -71,8 +73,7 @@ class TrainConfig(BaseConfig):
     
 @dataclass
 class VisualizationConfig(BaseConfig):
-    enabled: bool = True
-    save_path: str = ""
+    enabled: bool = False
     visualize_epochs: List[int] = field(default_factory=lambda: [])
     plots: List[str] = field(default_factory=lambda: ["branch_info", "ablation"])
 
@@ -91,45 +92,31 @@ class TaskConfig(BaseConfig):
     parameters: Dict = field(default_factory=dict)
 
 @dataclass
+class OutputsConfig(BaseConfig):
+    dir: str = "outputs"
+
+
+@dataclass
 class Config:
     model: ModelConfig = field(default_factory=ModelConfig)
     train: TrainConfig = field(default_factory=TrainConfig)
     wandb: WandbConfig = field(default_factory=WandbConfig)
     visualization: VisualizationConfig = field(default_factory=VisualizationConfig)
     task: TaskConfig = field(default_factory=TaskConfig)
+    outputs: OutputsConfig = field(default_factory=OutputsConfig)
 
-def load_config(path: str):
-    base = Config()
-    if not path:
-        return base
-    loaded = om.load(path)
-    if "model" in loaded:
-        if "task" in loaded["model"]:
-            base.model.task = loaded["model"]["task"]
-        if "probabilistic" in loaded["model"]:
-            base.model.probabilistic = loaded["model"]["probabilistic"]
-        if "network" in loaded["model"]:
-            net_type = loaded["model"]["network"].get("type", "EINet")
-            base.model.network.type = net_type
-            if "parameters" in loaded["model"]["network"]:
-                params = loaded["model"]["network"]["parameters"]
-                for k, v in params.items():
-                    setattr(base.model.network.parameters, k, v)
-    if "train" in loaded:
-        for k, v in loaded["train"].items():
-            if hasattr(base.train, k):
-                setattr(base.train, k, v)
-    if "wandb" in loaded:
-        for k, v in loaded["wandb"].items():
-            if hasattr(base.wandb, k):
-                setattr(base.wandb, k, v)
-    if "visualization" in loaded:
-        for k, v in loaded["visualization"].items():
-            if hasattr(base.visualization, k):
-                setattr(base.visualization, k, v)
-    if "task" in loaded:
-        if "dataset" in loaded["task"]:
-            base.task.dataset = loaded["task"]["dataset"]
-        if "parameters" in loaded["task"]:
-            base.task.parameters = loaded["task"]["parameters"]
-    return base
+
+
+def load_config(path: str = None) -> Config:
+    """Load configuration from a file or use defaults."""
+    if path:
+        raw_conf = om.load(path)
+        return Config(
+            model=ModelConfig(**raw_conf.get("model", {})),
+            train=TrainConfig(**raw_conf.get("train", {})),
+            wandb=WandbConfig(**raw_conf.get("wandb", {})),
+            visualization=VisualizationConfig(**raw_conf.get("visualization", {})),
+            task=TaskConfig(**raw_conf.get("task", {})),
+            outputs=OutputsConfig(**raw_conf.get("outputs", {})),
+        )
+    return Config()
