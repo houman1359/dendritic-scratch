@@ -55,11 +55,10 @@ wandb:
   project: #"dendritic_mnist_test"
   group:   #"debug"
   tags:    #[mnist_1]
-  use_wandb: false 
+  use_wandb: true 
 
 visualization:
   enabled: true
-  save_path:   # specified by user
   visualize_epochs: [10, 30]  # list of epochs at which to produce intermediate visualizations
   plots:
     - weights      # Plot dendritic or EI-net weights
@@ -68,3 +67,6 @@ visualization:
     #- profiles     # Plot dendritic compartment profiles
     #- branch_info  # mutual information
     #- ablation     # ablation
+
+outputs:
+  dir: "outputs"
