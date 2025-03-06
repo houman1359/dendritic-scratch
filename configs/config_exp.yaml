@@ -13,7 +13,7 @@ model:
       ee_synapses_per_branch_per_layer: [24]
       ei_synapses_per_branch_per_layer: [200]
       ie_synapses_per_branch_per_layer: [2]
-      ii_synapses_per_branch_per_layer: []
+      ii_synapses_per_branch_per_layer: [0]
       topk_init_method: xavier_normal
       use_shunting: false
       reactivation_type: param_tanh # "none", "param_tanh", "param_tanh_only_m", "relu", "sigmoid", "tanh"
@@ -22,6 +22,13 @@ model:
       enable_branch_outputs: false   ### alows DendriNetWithOutputs to keep activations etc
       output_layer: false  ### adding an output classifier layer FC to final dendrinet layer
       output_dim: 10
+      # input mode (0=original, 1=exc=x+inh=x, 2=two-headed MLP)
+      input_mode: 1
+      # If we set first_layer_input_mode=2, the following get used for MLP:
+      mlp_transform_dict:
+        type: "MLPInputTransform"
+        hidden_dims: [128, 64]
+        output_dim: 64
 
 train:
   learning_strategy: mle #"mle", "freeze_layers", "local_credit_assignment", "two_step", "two_step_kl"    --> local learning rules should start with local_...
