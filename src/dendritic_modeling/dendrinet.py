@@ -525,10 +525,11 @@ class DendriNet(nn.Module):
             if inhibitory_synapses_per_branch < 1:
                 raise ValueError('inhibitory_synapses_per_branch must be >= 1')
 
-        if not isinstance(excitatory_synapses_per_branch, int):
-            raise TypeError('excitatory_synapses_per_branch must be int')
-        if excitatory_synapses_per_branch < 1:
-            raise ValueError('excitatory_synapses_per_branch must be >= 1')
+        if excitatory_input_dim is not None and excitatory_synapses_per_branch is not None:
+            if not isinstance(excitatory_synapses_per_branch, int):
+                raise TypeError('excitatory_synapses_per_branch must be int')
+            if excitatory_synapses_per_branch < 1:
+                raise ValueError('excitatory_synapses_per_branch must be >= 1')
 
         branch_factors = deepcopy(branch_factors)
         self.n_branch_layers = len(branch_factors)
@@ -663,3 +664,10 @@ class DendriNetWithOutputs(DendriNet):
             output = self.branch_layers[i](x, inhibitory_input, output)
         final_soma = self.branch_layers[-1](x, inhibitory_input, output)
         return final_soma
+    
+    
+    
+
+
+
+
